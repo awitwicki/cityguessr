@@ -302,7 +302,10 @@ html, body {
   padding: 0 2px 0 26px;
 }
 .continent.open .country-grid {
-  max-height: 1200px;
+  /* Tall enough for a long continent (e.g. Europe/Asia) in the mobile
+     single-column layout — 1200px clipped the tail of the list (Ukraine,
+     UK…) on phones, where the desktop 2-column layout still fit. */
+  max-height: 4000px;
   opacity: 1;
   padding: 2px 2px 16px 26px;
 }

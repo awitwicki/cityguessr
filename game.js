@@ -152,6 +152,7 @@ function initMap() {
     attributionControl: true,
     maxBounds: [[-85, -180], [85, 180]],
     maxBoundsViscosity: 0.7,
+    wheelPxPerZoomLevel: 45, // fewer px per zoom level = faster scroll-zoom
   }).setView([25, 10], 2);
 
   // Satellite imagery (Esri World Imagery — free, no key)
@@ -205,6 +206,9 @@ function startGame() {
 
 function nextRound() {
   clearMapShapes();
+  // Restore the world view so every new city starts from the same scale,
+  // instead of leaving you zoomed in on the previous answer's region.
+  map.setView([25, 10], 2, { animate: false });
   if (state.pool.length === 0) {
     // Refill so endless mode never runs out
     state.pool = selectedCities();
