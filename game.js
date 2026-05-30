@@ -2,7 +2,7 @@
 //  CityGuessr — game logic
 // ════════════════════════════════════════════════════════════
 
-const ROUND_TIME = 15;           // seconds per city
+const ROUND_TIME = 30;           // seconds per city — time to zoom in and aim
 const MAX_DISTANCE_SCORE = 5000; // perfect-hit points
 const MAX_SPEED_BONUS = 1000;    // extra for answering fast
 const RING_CIRC = 2 * Math.PI * 19; // timer ring circumference
