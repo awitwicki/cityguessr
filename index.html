@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>CityGuessr — Atlas of Expeditions</title>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Spline+Sans+Mono:wght@400;500;600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Grain + vignette atmosphere -->
+  <div class="atmosphere" aria-hidden="true"></div>
+
+  <!-- Language switch -->
+  <div class="lang-switch" id="lang-switch">
+    <button type="button" data-lang="en">EN</button>
+    <button type="button" data-lang="uk">UK</button>
+  </div>
+
+  <!-- ══════════════ MENU SCREEN ══════════════ -->
+  <section id="menu" class="screen menu-screen is-active">
+    <div class="menu-inner">
+      <header class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <span class="compass">✦</span>
+        </div>
+        <h1 class="brand-title">City<span>Guessr</span></h1>
+        <p class="brand-sub" data-i18n="brandSub">An expedition across the world's cities · guess them on a satellite map</p>
+      </header>
+
+      <div class="menu-body">
+        <div class="menu-head">
+          <h2 data-i18n="menuHeading">Choose your lands to explore</h2>
+          <div class="menu-tools">
+            <button id="select-all" class="link-btn" type="button" data-i18n="selectAll">All</button>
+            <span class="dot">·</span>
+            <button id="clear-all" class="link-btn" type="button" data-i18n="clearAll">Clear</button>
+          </div>
+        </div>
+
+        <div id="continent-list" class="continent-list"><!-- filled by JS --></div>
+      </div>
+
+      <div class="rounds-select">
+        <span class="rounds-label" data-i18n="citySetLabel">City set</span>
+        <div class="seg" id="mode-seg">
+          <button type="button" data-fam="0" class="active" data-i18n="modeAll">All cities</button>
+          <button type="button" data-fam="1" data-i18n="modeFamous" data-i18n-title="modeFamousTitle">Famous only</button>
+        </div>
+      </div>
+
+      <div class="rounds-select">
+        <span class="rounds-label" data-i18n="roundsLabel">Rounds</span>
+        <div class="seg" id="rounds-seg">
+          <button type="button" data-rounds="5">5</button>
+          <button type="button" data-rounds="10" class="active">10</button>
+          <button type="button" data-rounds="15">15</button>
+          <button type="button" data-rounds="0" data-i18n-title="infiniteTitle">∞</button>
+        </div>
+      </div>
+
+      <footer class="menu-foot">
+        <div class="selection-info">
+          <span id="selection-count" class="count">0</span>
+          <span class="count-label" data-i18n="countLabel">cities in pool</span>
+        </div>
+        <button id="start-btn" class="play-btn" type="button" disabled>
+          <span data-i18n="startBtn">Begin the expedition</span>
+          <span class="play-arrow" aria-hidden="true">→</span>
+        </button>
+      </footer>
+    </div>
+  </section>
+
+  <!-- ══════════════ GAME SCREEN ══════════════ -->
+  <section id="game" class="screen game-screen">
+    <div id="map"></div>
+
+    <!-- Full-width countdown bar -->
+    <div class="time-bar" id="time-bar">
+      <div class="time-bar-fill" id="time-bar-fill"></div>
+    </div>
+
+    <!-- Top HUD: target city -->
+    <div class="hud hud-top">
+      <button id="quit-btn" class="ghost-btn" type="button" data-i18n-title="quitTitle">✕</button>
+      <div class="target-card">
+        <span class="target-label" data-i18n="targetLabel">Find the city</span>
+        <span id="target-city" class="target-city">—</span>
+        <span id="target-country" class="target-country">—</span>
+      </div>
+      <div class="hud-stats">
+        <div class="stat">
+          <span class="stat-value" id="score-value">0</span>
+          <span class="stat-label" data-i18n="scoreLabel">score</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value" id="round-value">1</span>
+          <span class="stat-label" data-i18n="roundLabel">round</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Timer ring -->
+    <div class="timer-wrap" id="timer-wrap">
+      <svg class="timer-ring" viewBox="0 0 44 44" aria-hidden="true">
+        <circle class="timer-track" cx="22" cy="22" r="19" />
+        <circle class="timer-progress" id="timer-progress" cx="22" cy="22" r="19" />
+      </svg>
+      <span class="timer-num" id="timer-num">15</span>
+    </div>
+
+    <!-- Bottom prompt -->
+    <div class="hud hud-bottom" id="click-hint">
+      <span class="pin-dot" aria-hidden="true"></span>
+      <span data-i18n="clickHint">Click on the map where you think the city is</span>
+    </div>
+
+    <!-- Result panel -->
+    <div class="result-panel" id="result-panel">
+      <div class="result-grade" id="result-grade"></div>
+      <div class="result-metrics">
+        <div class="metric">
+          <span class="metric-value"><span id="result-distance">0</span> <small data-i18n="km">km</small></span>
+          <span class="metric-label" data-i18n="metricError">off by</span>
+        </div>
+        <div class="metric metric-points">
+          <span class="metric-value">+<span id="result-points">0</span></span>
+          <span class="metric-label" data-i18n="metricPoints">points</span>
+        </div>
+      </div>
+      <button id="next-btn" class="next-btn" type="button"></button>
+    </div>
+  </section>
+
+  <!-- ══════════════ SUMMARY SCREEN ══════════════ -->
+  <section id="summary" class="screen summary-screen">
+    <div class="summary-inner">
+      <p class="summary-eyebrow" data-i18n="summaryEyebrow">Expedition log</p>
+      <h2 class="summary-title" data-i18n="summaryTitle">Journey summary</h2>
+
+      <div class="summary-score">
+        <span id="sum-total" class="sum-total">0</span>
+        <span class="sum-total-label" data-i18n="sumTotalLabel">total score</span>
+      </div>
+
+      <div class="summary-grid">
+        <div class="sum-card">
+          <span class="sum-card-value" id="sum-rounds">0</span>
+          <span class="sum-card-label" data-i18n="sumRoundsLabel">rounds</span>
+        </div>
+        <div class="sum-card">
+          <span class="sum-card-value" id="sum-avg-dist">0</span>
+          <span class="sum-card-label" data-i18n="sumAvgDistLabel">avg. error, km</span>
+        </div>
+        <div class="sum-card">
+          <span class="sum-card-value" id="sum-avg-score">0</span>
+          <span class="sum-card-label" data-i18n="sumAvgScoreLabel">avg. score / round</span>
+        </div>
+        <div class="sum-card sum-card-best">
+          <span class="sum-card-value" id="sum-best">—</span>
+          <span class="sum-card-label" data-i18n="sumBestLabel">best shot</span>
+        </div>
+      </div>
+
+      <div class="summary-actions">
+        <button id="again-btn" class="play-btn" type="button">
+          <span data-i18n="againBtn">New expedition</span>
+          <span class="play-arrow" aria-hidden="true">↻</span>
+        </button>
+        <button id="menu-btn" class="link-btn big" type="button" data-i18n="menuBtn">Back to region select</button>
+      </div>
+    </div>
+  </section>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="cities.js"></script>
+  <script src="i18n.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
